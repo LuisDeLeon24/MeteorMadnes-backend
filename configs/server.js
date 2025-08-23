@@ -36,10 +36,9 @@ export const initServer = async () => {
     const port = process.env.PORT || 3000;
     try {
         middlewares(app);
-        conectarDB();
         routes(app);
         app.listen(port);
-        createAdmin();
+ 
     
         console.log(`server running on port ${port}`)
     } catch (error) {
