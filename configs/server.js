@@ -2,7 +2,7 @@ import express from "express";
 import cors from 'cors';
 import helmet from "helmet";
 import morgan from "morgan";
-import { dbConnection } from "./mongo.js";
+
 
 
 import FormulasRoutes from "../src/Formulas/FormulasRoutes.js";
@@ -22,24 +22,14 @@ const routes = (app) => {
     app.use('/MeteorMadnes/formulas', FormulasRoutes);
 }
 
-const conectarDB = async () => {
-    try {
-        await dbConnection();
-        console.log('Successful connection to the database');
-    } catch (error) {
-        console.log('Failed to connect to database');
-    }
-}
 
 export const initServer = async () => {
     const app = express();
     const port = process.env.PORT || 3000;
     try {
         middlewares(app);
-        conectarDB();
         routes(app);
         app.listen(port);
-        createAdmin();
     
         console.log(`server running on port ${port}`)
     } catch (error) {
