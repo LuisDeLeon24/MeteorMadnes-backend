@@ -1,0 +1,299 @@
+[{
+  "_id": {
+    "$oid": "684610ca6e7d201de6a0c496"
+  },
+  "accountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "type": "Deposito",
+  "amount": {
+    "$numberDecimal": "205.00"
+  },
+  "details": "MMMMMMMMMM",
+  "destinationAccountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "status": true,
+  "createdAt": {
+    "$date": "2025-06-08T22:38:02.128Z"
+  },
+  "updatedAt": {
+    "$date": "2025-06-08T22:38:02.128Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "684610df6e7d201de6a0c49f"
+  },
+  "accountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "type": "Deposito",
+  "amount": {
+    "$numberDecimal": "205.00"
+  },
+  "details": "MMMMMMMMMM",
+  "destinationAccountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "status": true,
+  "createdAt": {
+    "$date": "2025-06-08T22:38:23.273Z"
+  },
+  "updatedAt": {
+    "$date": "2025-06-08T22:38:23.273Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "684610eb6e7d201de6a0c4a8"
+  },
+  "accountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "type": "Deposito",
+  "amount": {
+    "$numberDecimal": "205.00"
+  },
+  "details": "MMMMMMMMMM",
+  "destinationAccountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "status": true,
+  "createdAt": {
+    "$date": "2025-06-08T22:38:35.899Z"
+  },
+  "updatedAt": {
+    "$date": "2025-06-08T22:38:35.899Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68461920b18300004f350489"
+  },
+  "accountId": {
+    "$oid": "6845f681ec7de6fbad90178f"
+  },
+  "type": "Transferencia",
+  "amount": {
+    "$numberDecimal": "205.00"
+  },
+  "details": "MMMMMMMMMM",
+  "destinationAccountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "status": true,
+  "createdAt": {
+    "$date": "2025-06-08T23:13:36.165Z"
+  },
+  "updatedAt": {
+    "$date": "2025-06-08T23:13:36.165Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68461ef237a5895e51f64278"
+  },
+  "accountId": {
+    "$oid": "6845f681ec7de6fbad90178f"
+  },
+  "type": "Transferencia",
+  "amount": {
+    "$numberDecimal": "1000.00"
+  },
+  "details": "MMMMMMMMMM",
+  "destinationAccountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "status": true,
+  "createdAt": {
+    "$date": "2025-06-08T23:38:26.896Z"
+  },
+  "updatedAt": {
+    "$date": "2025-06-08T23:38:26.896Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68461ef837a5895e51f64281"
+  },
+  "accountId": {
+    "$oid": "6845f681ec7de6fbad90178f"
+  },
+  "type": "Transferencia",
+  "amount": {
+    "$numberDecimal": "1000.00"
+  },
+  "details": "MMMMMMMMMM",
+  "destinationAccountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "status": true,
+  "createdAt": {
+    "$date": "2025-06-08T23:38:32.981Z"
+  },
+  "updatedAt": {
+    "$date": "2025-06-08T23:38:32.981Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68461f0437a5895e51f6428a"
+  },
+  "accountId": {
+    "$oid": "6845f681ec7de6fbad90178f"
+  },
+  "type": "Transferencia",
+  "amount": {
+    "$numberDecimal": "1000.00"
+  },
+  "details": "MMMMMMMMMM",
+  "destinationAccountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "status": true,
+  "createdAt": {
+    "$date": "2025-06-08T23:38:44.278Z"
+  },
+  "updatedAt": {
+    "$date": "2025-06-08T23:38:44.278Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "684621a837a5895e51f64293"
+  },
+  "accountId": {
+    "$oid": "6845f681ec7de6fbad90178f"
+  },
+  "type": "Transferencia",
+  "amount": {
+    "$numberDecimal": "1000.00"
+  },
+  "details": "MMMMMMMMMM",
+  "destinationAccountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "status": true,
+  "createdAt": {
+    "$date": "2025-06-08T23:50:00.822Z"
+  },
+  "updatedAt": {
+    "$date": "2025-06-08T23:50:00.822Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "684621ad37a5895e51f6429c"
+  },
+  "accountId": {
+    "$oid": "6845f681ec7de6fbad90178f"
+  },
+  "type": "Transferencia",
+  "amount": {
+    "$numberDecimal": "1000.00"
+  },
+  "details": "MMMMMMMMMM",
+  "destinationAccountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "status": true,
+  "createdAt": {
+    "$date": "2025-06-08T23:50:05.210Z"
+  },
+  "updatedAt": {
+    "$date": "2025-06-08T23:50:05.210Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "684621b137a5895e51f642a5"
+  },
+  "accountId": {
+    "$oid": "6845f681ec7de6fbad90178f"
+  },
+  "type": "Transferencia",
+  "amount": {
+    "$numberDecimal": "1000.00"
+  },
+  "details": "MMMMMMMMMM",
+  "destinationAccountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "status": true,
+  "createdAt": {
+    "$date": "2025-06-08T23:50:09.565Z"
+  },
+  "updatedAt": {
+    "$date": "2025-06-08T23:50:09.565Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "684621b537a5895e51f642ae"
+  },
+  "accountId": {
+    "$oid": "6845f681ec7de6fbad90178f"
+  },
+  "type": "Transferencia",
+  "amount": {
+    "$numberDecimal": "1000.00"
+  },
+  "details": "MMMMMMMMMM",
+  "destinationAccountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "status": true,
+  "createdAt": {
+    "$date": "2025-06-08T23:50:13.864Z"
+  },
+  "updatedAt": {
+    "$date": "2025-06-08T23:50:13.864Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "684621b937a5895e51f642b7"
+  },
+  "accountId": {
+    "$oid": "6845f681ec7de6fbad90178f"
+  },
+  "type": "Transferencia",
+  "amount": {
+    "$numberDecimal": "1000.00"
+  },
+  "details": "MMMMMMMMMM",
+  "destinationAccountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "status": true,
+  "createdAt": {
+    "$date": "2025-06-08T23:50:17.935Z"
+  },
+  "updatedAt": {
+    "$date": "2025-06-08T23:50:17.935Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "684621be37a5895e51f642c0"
+  },
+  "accountId": {
+    "$oid": "6845f681ec7de6fbad90178f"
+  },
+  "type": "Transferencia",
+  "amount": {
+    "$numberDecimal": "1000.00"
+  },
+  "details": "MMMMMMMMMM",
+  "destinationAccountId": {
+    "$oid": "6845f523ec7de6fbad90177a"
+  },
+  "status": true,
+  "createdAt": {
+    "$date": "2025-06-08T23:50:22.011Z"
+  },
+  "updatedAt": {
+    "$date": "2025-06-08T23:50:22.011Z"
+  }
+}]

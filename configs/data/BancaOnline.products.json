@@ -1,0 +1,18 @@
+[{
+  "_id": {
+    "$oid": "6844efc801e98dd859842112"
+  },
+  "name": "Telefono",
+  "description": "Telefono neggers",
+  "price": {
+    "$numberDecimal": "15.83"
+  },
+  "asset": true,
+  "status": true,
+  "createdAt": {
+    "$date": "2025-06-08T02:04:56.212Z"
+  },
+  "updatedAt": {
+    "$date": "2025-06-08T02:04:56.212Z"
+  }
+}]

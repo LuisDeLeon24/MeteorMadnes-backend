@@ -1,0 +1,54 @@
+{
+	"info": {
+		"_postman_id": "d9f0d814-bf72-457a-8fb5-451279956723",
+		"name": "ACCOUNTS",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "45623968",
+		"_collection_link": "https://www.postman.com/kinal8/workspace/bank/collection/45623968-d9f0d814-bf72-457a-8fb5-451279956723?action=share&source=collection_link&creator=45623968"
+	},
+	"item": [
+		{
+			"name": "CREATE-ACCOUNT",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-token",
+						"value": "",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"userId\": \"6840cbf07aee0318628ed243\",\r\n    \"accountNumber\": \"125451\",\r\n    \"balance\": 1000.0\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:3000/BancaOnline/v1/accounts/"
+			},
+			"response": []
+		},
+		{
+			"name": "GET-ACCOUNTS",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "http://localhost:3000/BancaOnline/v1/accounts/"
+			},
+			"response": []
+		},
+		{
+			"name": "GETBYID-ACCOUNT",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "http://localhost:3000/BancaOnline/v1/accounts/6840d2160c7694cc537776de"
+			},
+			"response": []
+		}
+	]
+}

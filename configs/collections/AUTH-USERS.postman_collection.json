@@ -1,0 +1,213 @@
+{
+	"info": {
+		"_postman_id": "8ad7b9ab-2221-498e-a6eb-eb3cd11dae83",
+		"name": "AUTH-USERS",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "45623968",
+		"_collection_link": "https://www.postman.com/kinal8/workspace/bank/collection/42599664-8ad7b9ab-2221-498e-a6eb-eb3cd11dae83?action=share&source=collection_link&creator=45623968"
+	},
+	"item": [
+		{
+			"name": "Register",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"Cristian\",\r\n    \"surname\": \"Lima\",\r\n    \"username\": \"clima\",\r\n    \"dpi\":\"7485124563258\",\r\n    \"address\":\"Bucaro\",\r\n    \"work\":\"Ingeniero\",\r\n    \"income\": 10.00,\r\n    \"email\": \"clima@gmail.com\",\r\n    \"password\": \"12345678\",\r\n    \"phone\": \"12345678\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:3000/BancaOnline/v1/auth/register"
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();\r",
+							"pm.environment.set(\"token\", response.userDetails.token);\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\":\"ADMINB@gmail.com\",\r\n    \"password\": \"ADMINB\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:3000/BancaOnline/v1/auth/login"
+			},
+			"response": []
+		},
+		{
+			"name": "Get-Users",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-token",
+						"value": "{{vault:json-web-token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:3000/HotelManagement/v1/user/profile"
+			},
+			"response": []
+		},
+		{
+			"name": "Put-Users",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "x-token",
+						"value": "{{vault:json-web-token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"Joaquin\",\r\n    \"surname\": \"Figueroa\",\r\n    \"username\": \"Joaki\",\r\n    \"email\": \"figueroaalvarez594@gmail.com\",\r\n    \"password\": \"Joaquin2007\",\r\n    \"phone\": \"12345678\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:3000/HotelManagement/v1/users/680cf2d743ace193dd5bd75d"
+			},
+			"response": []
+		},
+		{
+			"name": "Delete-Users",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "x-token",
+						"value": "{{vault:json-web-token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    //YES or NO\r\n    \"confirm\": \"YES\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:3000/HotelManagement/v1/users/680d00ad1c38565aeb586c6d"
+			},
+			"response": []
+		},
+		{
+			"name": "Get-UserForMonth",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "",
+						"value": "",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:3000/HotelManagement/v1/user/forMonth"
+			},
+			"response": []
+		},
+		{
+			"name": "Get-Users-profile",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-token",
+						"value": "{{vault:json-web-token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:3000/HotelManagement/v1/user/profile"
+			},
+			"response": []
+		},
+		{
+			"name": "userCount",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "http://localhost:3000/HotelManagement/v1/user/usercount"
+			},
+			"response": []
+		}
+	]
+}
