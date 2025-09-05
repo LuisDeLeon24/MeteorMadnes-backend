@@ -85,3 +85,5 @@ export const FuerzaGravitatoria = async (req, res) => {
     res.status(500).json({ error: "Error interno del servidor", details: err.message });
   }
 };
+
+

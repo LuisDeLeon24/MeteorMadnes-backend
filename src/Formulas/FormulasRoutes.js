@@ -8,9 +8,4 @@ router.post(
      Energia
 );
 
-router.post(
-    '/FuerzaGravitatoria',
-     FuerzaGravitatoria
-);
-
 export default router;

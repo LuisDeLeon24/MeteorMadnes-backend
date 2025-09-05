@@ -6,6 +6,7 @@ import morgan from "morgan";
 
 
 import FormulasRoutes from "../src/Formulas/FormulasRoutes.js";
+import FetchRoutes from "../src/fetch/FetchRoutes.js";  
 import limiter from "../src/middlewares/validate-cant-request.js";
 
 
@@ -20,6 +21,7 @@ const middlewares = (app) => {
 
 const routes = (app) => {
     app.use('/MeteorMadnes/formulas', FormulasRoutes);
+    app.use('/MeteorMadnes/fetch', FetchRoutes);
 }
 
 
@@ -30,6 +32,7 @@ export const initServer = async () => {
         middlewares(app);
         routes(app);
         app.listen(port);
+        createAdmin();
     
         console.log(`server running on port ${port}`)
     } catch (error) {
