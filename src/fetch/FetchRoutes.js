@@ -7,7 +7,7 @@ import {
   getWorldBankData,
   getLocationData,
   getDisasterData,
-  getPopulationData
+  //getPopulationData // BONUS
 } from "./FetchController.js";
 
 const router = Router();
@@ -21,6 +21,6 @@ router.get("/neo", getNeoData);
 router.get("/worldbank", getWorldBankData);
 router.get("/location", getLocationData);
 router.get("/disasters", getDisasterData);
-router.get("/population", getPopulationData); // BONUS
+//router.get("/population", getPopulationData); // BONUS
 
 export default router;
