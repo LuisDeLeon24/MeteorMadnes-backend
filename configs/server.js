@@ -32,7 +32,6 @@ export const initServer = async () => {
         middlewares(app);
         routes(app);
         app.listen(port);
-        createAdmin();
     
         console.log(`server running on port ${port}`)
     } catch (error) {
