@@ -9,7 +9,9 @@ import {
   victimasIndirectas,
   perdidasEconomicas,
   severidadDemografica,
-  materialEyectado
+  materialEyectado,
+  perdidaPIB,
+  resumenImpacto
 } from "./FormulasDemograficoController.js";
 
 const router = Router();
@@ -24,5 +26,7 @@ router.post("/victimasIndirectas", victimasIndirectas);
 router.post("/perdidasEconomicas", perdidasEconomicas);
 router.post("/severidadDemografica", severidadDemografica);
 router.post("/materialEyectado", materialEyectado);
+router.post("/perdidaPIB", perdidaPIB);
+router.post("/resumenImpacto", resumenImpacto);
 
 export default router;

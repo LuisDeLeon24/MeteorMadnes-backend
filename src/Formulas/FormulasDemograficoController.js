@@ -1,5 +1,4 @@
-// controllers/FormulasDemograficoController.js
-
+import { getWorldBankData } from '../fetch/FetchController.js';
 // 1. Energía cinética (base para todo)
 export const energia = (masaKg, velocidadMs) => {
   return 0.5 * masaKg * Math.pow(velocidadMs, 2); // J
@@ -78,15 +77,82 @@ export const presionDinamica = async (req, res) => {
 // 6. Población afectada
 export const poblacionAfectada = async (req, res) => {
   try {
-    const { densidadPoblacionHabKm2, areaAfectadaKm2 } = req.body;
+    const { country = 'GT', areaAfectadaKm2 = 100, date } = req.body;
+    const yearRange = date || '2020:2023';
 
-    if (!densidadPoblacionHabKm2 || !areaAfectadaKm2) {
-      return res.status(400).json({ error: "Debes enviar densidadPoblacionHabKm2 y areaAfectadaKm2" });
-    }
+    // 1️⃣ Traer densidad poblacional desde World Bank
+    const densidadData = await getWorldBankData({ country, indicator: 'EN.POP.DNST', date: yearRange });
+    const latestDensity = densidadData.data.find(d => d.value != null);
+    if (!latestDensity) return res.status(404).json({ error: "No se encontró densidad poblacional" });
+    const densidadPoblacionHabKm2 = latestDensity.value;
 
+    // 2️⃣ Calcular población afectada
     const nafHab = densidadPoblacionHabKm2 * areaAfectadaKm2;
 
-    return res.json({ densidadPoblacionHabKm2, areaAfectadaKm2, nafHab });
+    // Función para formatear números
+    const formatNumber = (num) => Number(num).toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+    return res.json({
+      country,
+      year: latestDensity.year,
+      areaAfectadaKm2: formatNumber(areaAfectadaKm2),
+      densidadPoblacionHabKm2: formatNumber(densidadPoblacionHabKm2),
+      nafHab: formatNumber(nafHab)
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Error interno", details: err.message });
+  }
+};
+
+
+export const perdidaPIB = async (req, res) => {
+  try {
+    const {
+      country = 'GT',
+      areaAfectadaKm2 = 10,
+      gamma = 1,
+      date
+    } = req.body;
+
+    const yearRange = date || '2020:2023';
+
+    // 1️⃣ Traer población total
+    const poblacionData = await getWorldBankData({ country, indicator: 'SP.POP.TOTL', date: yearRange });
+    const latestPoblacion = poblacionData.data.find(d => d.value != null);
+    if (!latestPoblacion) return res.status(404).json({ error: "No se encontró población total" });
+    const poblacionTotal = latestPoblacion.value;
+
+    // 2️⃣ Traer población afectada
+    const nafHabRes = await calcularPoblacionAfectada({ country, areaAfectadaKm2, date });
+    const nafHab = nafHabRes.nafHab || areaAfectadaKm2; // fallback
+
+    // 3️⃣ Estimar SDI
+    const SDI = Math.min(nafHab / poblacionTotal, 1); // limitar a 1
+
+    // 4️⃣ Traer GDP total
+    const gdpData = await getWorldBankData({ country, indicator: 'NY.GDP.MKTP.CD', date: yearRange });
+    const latestGDP = gdpData.data.find(d => d.value != null);
+    if (!latestGDP) return res.status(404).json({ error: "No se encontró GDP total" });
+    const GDPtotal = latestGDP.value;
+
+    // 5️⃣ Calcular pérdida total
+    const perdidaTotal = gamma * GDPtotal * SDI;
+
+    // Formatear números con comas
+    const formatNumber = (num) => Number(num).toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+    return res.json({
+      country,
+      year: latestGDP.year,
+      GDPtotal: formatNumber(GDPtotal),
+      areaAfectadaKm2: formatNumber(areaAfectadaKm2),
+      poblacionTotal: formatNumber(poblacionTotal),
+      nafHab: formatNumber(nafHab),
+      SDI: formatNumber(SDI),
+      gamma: formatNumber(gamma),
+      perdidaTotalUSD: formatNumber(perdidaTotal)
+    });
+
   } catch (err) {
     res.status(500).json({ error: "Error interno", details: err.message });
   }
@@ -95,32 +161,90 @@ export const poblacionAfectada = async (req, res) => {
 // 7. Mortalidad esperada directa
 export const mortalidadDirecta = async (req, res) => {
   try {
-    const { nafHab, factorLetalidad } = req.body;
+    const { country = 'GT', areaAfectadaKm2 = 100, fLetalidadBase = 0.05, date } = req.body;
+    const yearRange = date || '2020:2023';
 
-    if (!nafHab || !factorLetalidad) {
-      return res.status(400).json({ error: "Debes enviar nafHab y factorLetalidad" });
-    }
+    // Densidad poblacional
+    const densidadData = await getWorldBankData({ country, indicator: 'EN.POP.DNST', date: yearRange });
+    const latestDensity = densidadData.data.find(d => d.value != null);
+    if (!latestDensity) return res.status(404).json({ error: "No se encontró densidad poblacional" });
+    const densidadHabKm2 = latestDensity.value;
 
+    // Población afectada
+    const nafHab = densidadHabKm2 * areaAfectadaKm2;
+
+    // Camas hospitalarias
+    const camasData = await getWorldBankData({ country, indicator: 'SH.MED.BEDS.ZS', date: yearRange });
+    const latestCamas = camasData.data.find(d => d.value != null);
+    const camasPorMil = latestCamas ? latestCamas.value : 1.5;
+
+    // Factor de letalidad ajustado
+    const factorLetalidad = fLetalidadBase * (10 / camasPorMil);
+
+    // Muertes directas
     const muertesDirectas = nafHab * factorLetalidad;
 
-    return res.json({ nafHab, factorLetalidad, muertesDirectas });
+    // Función para formatear números
+    const formatNumber = (num) => Number(num).toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+    return res.json({
+      country,
+      year: latestDensity.year,
+      areaAfectadaKm2: formatNumber(areaAfectadaKm2),
+      densidadHabKm2: formatNumber(densidadHabKm2),
+      camasPorMil: formatNumber(camasPorMil),
+      nafHab: formatNumber(nafHab),
+      factorLetalidad: formatNumber(factorLetalidad),
+      muertesDirectas: formatNumber(muertesDirectas)
+    });
+
   } catch (err) {
     res.status(500).json({ error: "Error interno", details: err.message });
   }
 };
 
+
+
 // 8. Víctimas indirectas
 export const victimasIndirectas = async (req, res) => {
   try {
-    const { nafHab, beta } = req.body;
+    const { country = 'GT', areaAfectadaKm2 = 100, betaBase = 0.2, date } = req.body;
+    const yearRange = date || '2020:2023';
 
-    if (!nafHab || !beta) {
-      return res.status(400).json({ error: "Debes enviar nafHab y beta" });
-    }
+    // 1️⃣ Traer densidad poblacional
+    const densidadData = await getWorldBankData({ country, indicator: 'EN.POP.DNST', date: yearRange });
+    const latestDensity = densidadData.data.find(d => d.value != null);
+    if (!latestDensity) return res.status(404).json({ error: "No se encontró densidad poblacional" });
+    const densidadHabKm2 = latestDensity.value;
 
-    const muertesIndirectas = beta * nafHab;
+    // 2️⃣ Calcular población afectada
+    const nafHab = densidadHabKm2 * areaAfectadaKm2;
 
-    return res.json({ nafHab, beta, muertesIndirectas });
+    // 3️⃣ Ajustar beta según infraestructura de salud
+    const camasData = await getWorldBankData({ country, indicator: 'SH.MED.BEDS.ZS', date: yearRange });
+    const latestCamas = camasData.data.find(d => d.value != null);
+    const camasPorMil = latestCamas ? latestCamas.value : 1.5;
+
+    // Factor de víctimas indirectas ajustado
+    const beta = Math.min(betaBase * (10 / camasPorMil), 1);
+
+    // 4️⃣ Calcular víctimas indirectas
+    const muertesIndirectas = nafHab * beta;
+
+    // Función para formatear números
+    const formatNumber = (num) => Number(num).toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+    return res.json({
+      country,
+      year: latestDensity.year,
+      areaAfectadaKm2: formatNumber(areaAfectadaKm2),
+      densidadHabKm2: formatNumber(densidadHabKm2),
+      camasPorMil: formatNumber(camasPorMil),
+      nafHab: formatNumber(nafHab),
+      beta: formatNumber(beta),
+      muertesIndirectas: formatNumber(muertesIndirectas)
+    });
+
   } catch (err) {
     res.status(500).json({ error: "Error interno", details: err.message });
   }
@@ -129,36 +253,89 @@ export const victimasIndirectas = async (req, res) => {
 // 9. Pérdidas económicas
 export const perdidasEconomicas = async (req, res) => {
   try {
-    const { gamma, areaAfectadaKm2, valorUrbanoUsdKm2 } = req.body;
+    const { country = 'GT', areaAfectadaKm2 = 100, gammaBase = 0.3, date } = req.body;
+    const yearRange = date || '2020:2023';
 
-    if (!gamma || !areaAfectadaKm2 || !valorUrbanoUsdKm2) {
-      return res.status(400).json({ error: "Debes enviar gamma, areaAfectadaKm2 y valorUrbanoUsdKm2" });
-    }
+    // 1️⃣ Traer población total y urbana
+    const poblacionData = await getWorldBankData({ country, indicator: 'SP.URB.TOTL', date: yearRange });
+    const latestPoblacion = poblacionData.data.find(d => d.value != null);
+    if (!latestPoblacion) return res.status(404).json({ error: "No se encontró población urbana" });
+    const poblacionUrbana = latestPoblacion.value;
 
+    // 2️⃣ Traer PIB per cápita (USD)
+    const pibData = await getWorldBankData({ country, indicator: 'NY.GDP.PCAP.CD', date: yearRange });
+    const latestPib = pibData.data.find(d => d.value != null);
+    const pibPerCapita = latestPib ? latestPib.value : 5000; // valor por defecto si no hay datos
+
+    // 3️⃣ Estimar valor urbano por km²
+    const valorUrbanoUsdKm2 = (pibPerCapita * poblacionUrbana) / (poblacionUrbana / 1000);
+
+    // 4️⃣ Calcular pérdidas económicas
+    const gamma = Math.min(gammaBase, 1); // limitar a 1
     const perdidasUsd = gamma * areaAfectadaKm2 * valorUrbanoUsdKm2;
 
-    return res.json({ gamma, areaAfectadaKm2, valorUrbanoUsdKm2, perdidasUsd });
+    // Función para formatear números
+    const formatNumber = (num) => Number(num).toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+    return res.json({
+      country,
+      year: latestPoblacion.year,
+      areaAfectadaKm2: formatNumber(areaAfectadaKm2),
+      poblacionUrbana: formatNumber(poblacionUrbana),
+      pibPerCapita: formatNumber(pibPerCapita),
+      valorUrbanoUsdKm2: formatNumber(valorUrbanoUsdKm2),
+      gamma: formatNumber(gamma),
+      perdidasUsd: formatNumber(perdidasUsd)
+    });
+
   } catch (err) {
     res.status(500).json({ error: "Error interno", details: err.message });
   }
 };
+
 
 // 10. Índice de severidad demográfica
 export const severidadDemografica = async (req, res) => {
   try {
-    const { muertesTotales, poblacionTotal } = req.body;
+    const { country = 'GT', areaAfectadaKm2 = 100, fLetalidadBase = 0.05, betaBase = 0.2, date } = req.body;
 
-    if (!muertesTotales || !poblacionTotal) {
-      return res.status(400).json({ error: "Debes enviar muertesTotales y poblacionTotal" });
-    }
+    // Función para formatear números
+    const formatNumber = (num) => Number(num).toLocaleString('en-US', { maximumFractionDigits: 2 });
 
+    // Calcular muertes directas
+    const md = await calcularMuertesDirectas({ country, areaAfectadaKm2, fLetalidadBase, date });
+
+    // Calcular muertes indirectas
+    const mi = await calcularMuertesIndirectas({ country, areaAfectadaKm2, betaBase, date });
+
+    // Traer población total
+    const yearRange = date || '2020:2023';
+    const poblacionData = await getWorldBankData({ country, indicator: 'SP.POP.TOTL', date: yearRange });
+    const latestPoblacion = poblacionData.data.find(d => d.value != null);
+    if (!latestPoblacion) return res.status(404).json({ error: "No se encontró población total" });
+
+    const poblacionTotal = latestPoblacion.value;
+
+    // Calcular muertes totales y severidad
+    const muertesTotales = md.muertesDirectas + mi.muertesIndirectas;
     const sPorcentaje = (muertesTotales / poblacionTotal) * 100;
 
-    return res.json({ muertesTotales, poblacionTotal, sPorcentaje });
+    return res.json({
+      country,
+      year: latestPoblacion.year,
+      poblacionTotal: formatNumber(poblacionTotal),
+      areaAfectadaKm2: formatNumber(areaAfectadaKm2),
+      muertesDirectas: formatNumber(md.muertesDirectas),
+      muertesIndirectas: formatNumber(mi.muertesIndirectas),
+      muertesTotales: formatNumber(muertesTotales),
+      sPorcentaje: formatNumber(sPorcentaje)
+    });
+
   } catch (err) {
     res.status(500).json({ error: "Error interno", details: err.message });
   }
 };
+
 
 // 11. Volumen material eyectado
 export const materialEyectado = async (req, res) => {
@@ -172,6 +349,170 @@ export const materialEyectado = async (req, res) => {
     const meyKg = delta * densidadObjetivoKgm3 * Math.pow(rcM, 3);
 
     return res.json({ delta, densidadObjetivoKgm3, rcM, meyKg });
+  } catch (err) {
+    res.status(500).json({ error: "Error interno", details: err.message });
+  }
+};
+
+// Función interna para muertes directas
+export const calcularMuertesDirectas = async ({ country, areaAfectadaKm2 = 100, fLetalidadBase = 0.05, date }) => {
+  const yearRange = date || '2020:2023';
+
+  const densidadData = await getWorldBankData({ country, indicator: 'EN.POP.DNST', date: yearRange });
+  const latestDensity = densidadData.data.find(d => d.value != null);
+  if (!latestDensity) throw new Error("No se encontró densidad poblacional");
+  const densidadHabKm2 = latestDensity.value;
+
+  const nafHab = densidadHabKm2 * areaAfectadaKm2;
+
+  const camasData = await getWorldBankData({ country, indicator: 'SH.MED.BEDS.ZS', date: yearRange });
+  const latestCamas = camasData.data.find(d => d.value != null);
+  const camasPorMil = latestCamas ? latestCamas.value : 1.5;
+
+  const factorLetalidad = Math.min(fLetalidadBase * (10 / camasPorMil), 1);
+
+  return { nafHab, factorLetalidad, muertesDirectas: nafHab * factorLetalidad, year: latestDensity.year };
+};
+
+// Función interna para muertes indirectas
+export const calcularMuertesIndirectas = async ({ country, areaAfectadaKm2 = 100, betaBase = 0.2, date }) => {
+  const yearRange = date || '2020:2023';
+
+  const densidadData = await getWorldBankData({ country, indicator: 'EN.POP.DNST', date: yearRange });
+  const latestDensity = densidadData.data.find(d => d.value != null);
+  if (!latestDensity) throw new Error("No se encontró densidad poblacional");
+  const densidadHabKm2 = latestDensity.value;
+
+  const nafHab = densidadHabKm2 * areaAfectadaKm2;
+
+  const camasData = await getWorldBankData({ country, indicator: 'SH.MED.BEDS.ZS', date: yearRange });
+  const latestCamas = camasData.data.find(d => d.value != null);
+  const camasPorMil = latestCamas ? latestCamas.value : 1.5;
+
+  const beta = Math.min(betaBase * (10 / camasPorMil), 1);
+
+  return { nafHab, beta, muertesIndirectas: nafHab * beta, year: latestDensity.year };
+};
+
+export const calcularPoblacionAfectada = async ({ country = 'GT', areaAfectadaKm2 = 100, date }) => {
+  const yearRange = date || '2020:2023';
+
+  // Traer densidad poblacional desde World Bank
+  const densidadData = await getWorldBankData({ country, indicator: 'EN.POP.DNST', date: yearRange });
+  const latestDensity = densidadData.data.find(d => d.value != null);
+  if (!latestDensity) throw new Error("No se encontró densidad poblacional");
+
+  const densidadPoblacionHabKm2 = latestDensity.value;
+  const nafHab = densidadPoblacionHabKm2 * areaAfectadaKm2;
+
+  return { densidadPoblacionHabKm2, nafHab, year: latestDensity.year };
+};
+
+export const resumenImpacto = async (req, res) => {
+  try {
+    const {
+      country = 'GT',
+      areaAfectadaKm2 = 100,
+      fLetalidadBase = 0.05,
+      betaBase = 0.2,
+      gammaBase = 0.3,
+      gamma = 1,
+      date
+    } = req.body;
+
+    const yearRange = date || '2020:2023';
+
+    // Función para formatear números
+    const formatNumber = (num) => Number(num).toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+    // --------------------------
+    // 1️⃣ Población afectada
+    // --------------------------
+    const densidadData = await getWorldBankData({ country, indicator: 'EN.POP.DNST', date: yearRange });
+    const latestDensity = densidadData.data.find(d => d.value != null);
+    if (!latestDensity) return res.status(404).json({ error: "No se encontró densidad poblacional" });
+
+    const densidadHabKm2 = latestDensity.value;
+    const nafHab = densidadHabKm2 * areaAfectadaKm2;
+
+    // --------------------------
+    // 2️⃣ Mortalidad directa
+    // --------------------------
+    const camasData = await getWorldBankData({ country, indicator: 'SH.MED.BEDS.ZS', date: yearRange });
+    const latestCamas = camasData.data.find(d => d.value != null);
+    const camasPorMil = latestCamas ? latestCamas.value : 1.5;
+
+    const factorLetalidad = fLetalidadBase * (10 / camasPorMil);
+    const muertesDirectas = nafHab * factorLetalidad;
+
+    // --------------------------
+    // 3️⃣ Víctimas indirectas
+    // --------------------------
+    const beta = Math.min(betaBase * (10 / camasPorMil), 1);
+    const muertesIndirectas = nafHab * beta;
+
+    // --------------------------
+    // 4️⃣ Pérdida por PIB
+    // --------------------------
+    const poblacionTotalData = await getWorldBankData({ country, indicator: 'SP.POP.TOTL', date: yearRange });
+    const latestPoblacionTotal = poblacionTotalData.data.find(d => d.value != null);
+    if (!latestPoblacionTotal) return res.status(404).json({ error: "No se encontró población total" });
+    const poblacionTotal = latestPoblacionTotal.value;
+
+    const gdpData = await getWorldBankData({ country, indicator: 'NY.GDP.MKTP.CD', date: yearRange });
+    const latestGDP = gdpData.data.find(d => d.value != null);
+    if (!latestGDP) return res.status(404).json({ error: "No se encontró GDP total" });
+    const GDPtotal = latestGDP.value;
+
+    const SDI = Math.min(nafHab / poblacionTotal, 1);
+    const perdidaPIBTotal = gamma * GDPtotal * SDI;
+
+    // --------------------------
+    // 5️⃣ Pérdidas económicas
+    // --------------------------
+    const poblacionUrbanaData = await getWorldBankData({ country, indicator: 'SP.URB.TOTL', date: yearRange });
+    const latestPoblacionUrbana = poblacionUrbanaData.data.find(d => d.value != null);
+    const poblacionUrbana = latestPoblacionUrbana ? latestPoblacionUrbana.value : 0;
+
+    const pibData = await getWorldBankData({ country, indicator: 'NY.GDP.PCAP.CD', date: yearRange });
+    const latestPib = pibData.data.find(d => d.value != null);
+    const pibPerCapita = latestPib ? latestPib.value : 5000;
+
+    const valorUrbanoUsdKm2 = (pibPerCapita * poblacionUrbana) / (poblacionUrbana / 1000);
+    const perdidasEconomicasTotal = Math.min(gammaBase, 1) * areaAfectadaKm2 * valorUrbanoUsdKm2;
+
+    // --------------------------
+    // 6️⃣ Severidad demográfica
+    // --------------------------
+    const muertesTotales = muertesDirectas + muertesIndirectas;
+    const sPorcentaje = (muertesTotales / poblacionTotal) * 100;
+
+    // --------------------------
+    // Resumen master
+    // --------------------------
+    return res.json({
+      country,
+      year: latestDensity.year,
+      areaAfectadaKm2: formatNumber(areaAfectadaKm2),
+      densidadHabKm2: formatNumber(densidadHabKm2),
+      nafHab: formatNumber(nafHab),
+      camasPorMil: formatNumber(camasPorMil),
+      factorLetalidad: formatNumber(factorLetalidad),
+      muertesDirectas: formatNumber(muertesDirectas),
+      beta: formatNumber(beta),
+      muertesIndirectas: formatNumber(muertesIndirectas),
+      poblacionTotal: formatNumber(poblacionTotal),
+      GDPtotal: formatNumber(GDPtotal),
+      SDI: formatNumber(SDI),
+      perdidaPIBTotal: formatNumber(perdidaPIBTotal),
+      poblacionUrbana: formatNumber(poblacionUrbana),
+      pibPerCapita: formatNumber(pibPerCapita),
+      valorUrbanoUsdKm2: formatNumber(valorUrbanoUsdKm2),
+      perdidasEconomicasTotal: formatNumber(perdidasEconomicasTotal),
+      muertesTotales: formatNumber(muertesTotales),
+      sPorcentaje: formatNumber(sPorcentaje)
+    });
+
   } catch (err) {
     res.status(500).json({ error: "Error interno", details: err.message });
   }

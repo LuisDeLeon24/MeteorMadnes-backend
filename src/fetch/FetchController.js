@@ -84,29 +84,45 @@ export const getNeoData = async (req, res) => {
   }
 };
 
-export const getWorldBankData = async (req, res) => {
+export const getWorldBankData = async ({
+  country = 'all',
+  indicator = 'SP.POP.TOTL',
+  date = '2020:2023'
+}) => {
   try {
-    const { 
-      country = 'all', 
-      indicator = 'SP.POP.TOTL',
-      date = '2020:2023' 
-    } = req.query;
+    const url = `https://api.worldbank.org/v2/country/${country}/indicator/${indicator}?date=${date}&format=json&per_page=1000`;
 
-    const targetUrl = `https://api.worldbank.org/v2/country/${country}/indicator/${indicator}?date=${date}&format=json&per_page=1000`;
-
-    const response = await fetch(targetUrl);
+    const response = await fetch(url);
     const json = await response.json();
 
     if (!Array.isArray(json) || json.length < 2 || !json[1]) {
-      return res.status(404).json({ error: "No se encontraron datos" });
+      throw new Error("No se encontraron datos");
     }
 
-    const parsedData = parseWorldBankData(json);
-    res.json(parsedData);
+    // Adaptamos al formato que mencionaste
+    const dataArray = json[1].map(d => ({
+      countryCode: d.country.id,
+      countryName: d.country.value,
+      indicator: d.indicator.value,
+      value: d.value,
+      year: parseInt(d.date)
+    }));
+
+    const latest = dataArray[0]; // El más reciente (World Bank devuelve primero el año más reciente)
+
+    return {
+      totalRecords: dataArray.length,
+      years: dataArray.map(d => d.year),
+      data: dataArray,
+      latest: latest,
+      top10: dataArray.slice(0, 10)
+    };
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error fetchWorldBankData:", err.message);
+    throw err;
   }
 };
+
 
 
 export const getLocationData = async (req, res) => {

@@ -17,9 +17,11 @@ const router = Router();
 router.get("/horizons/:id", Horizons);
 router.get("/smallbody", getSmallBodyData);
 router.get("/neo", getNeoData);
+
 router.get("/worldbank", getWorldBankData);
 router.get("/location", getLocationData);
 router.get("/disasters", getGDACSDisasters);
+
 router.get("/esa-risk", getESARiskList);
 router.get("/neows", getNASANeoWsData);
 router.get("/naturalearth", getNaturalEarthData);
