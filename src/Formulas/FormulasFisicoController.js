@@ -1,4 +1,4 @@
-import { getSmallBodyData, Horizons } from '../fetch/FetchController.js';
+import { fetchHorizonsData } from "../fetch/FetchController.js";
 import fetch from 'node-fetch'; // si Node <18, si Node 18+ fetch es global
 
 // Función auxiliar para buscar asteroide por nombre usando NEO WS
@@ -18,43 +18,56 @@ const fetchNeoData = async () => {
 
 export const EnergiaCinetica = async (req, res) => {
   try {
-    let { spkid, name } = req.body;
+    let { id, name } = req.body;
 
-    if (!spkid && !name) {
-      return res.status(400).json({ error: "Se requiere 'spkid' o 'name' del asteroide" });
+    if (!id && !name) {
+      return res.status(400).json({ error: "Se requiere 'id' o 'name' del asteroide" });
     }
 
-    // Si solo se proporciona el nombre, buscar su spkid
-    if (!spkid && name) {
-      const neoData = await fetchNeoData();
-      const asteroid = neoData.find(a => a.name.toLowerCase() === name.toLowerCase());
-      if (!asteroid) return res.status(404).json({ error: "Asteroide no encontrado" });
-      spkid = asteroid.id;
+    if (!id && name) {
+      id = name; // Horizons acepta nombre o designación oficial
     }
 
-    // 1️⃣ Traer datos físicos del asteroide
-    const smallBody = await getSmallBodyData({ spkid });
-    if (!smallBody.physicalParams.mass) {
-      return res.status(404).json({ error: "No se encontró la masa del cuerpo" });
+    const horizons = await fetchHorizonsData(id);
+    if (!horizons) {
+      return res.status(404).json({ error: "No se encontró efemérides en Horizons" });
     }
 
-    // 2️⃣ Traer ephemeris usando Horizons
-    const horizons = await Horizons({ id: spkid });
-    if (!horizons || horizons.length === 0) return res.status(404).json({ error: "No se encontró ephemeris" });
+    // 1️⃣ Calcular masa
+    let massKg = null;
 
-    // 3️⃣ Tomar velocidad del primer registro
-    const velocityKmS = horizons[0].velocity; // depende del parseo de Horizons
-    if (!velocityKmS) return res.status(404).json({ error: "Velocidad no disponible" });
+    // Intentar con GM
+    const gm = horizons.basicInfo?.GM;
+    if (gm) {
+      const G = 6.67430e-20; // km^3 / (kg * s^2)
+      massKg = gm / G;
+    }
 
-    // 4️⃣ Calcular energía cinética (Joules)
-    const massKg = smallBody.physicalParams.mass;
+    // Si GM no existe, estimar con radio y densidad promedio
+    if (!massKg && horizons.basicInfo?.radius) {
+      const radiusM = horizons.basicInfo.radius * 1000;
+      const volume = (4 / 3) * Math.PI * Math.pow(radiusM, 3);
+      const density = 3000; // kg/m³
+      massKg = volume * density;
+    }
+
+    if (!massKg) {
+      return res.status(404).json({ error: "No se pudo calcular la masa del asteroide" });
+    }
+
+    // 2️⃣ Usar deldot como velocidad (km/s)
+    const velocityKmS = horizons.ephemeris[0]?.deldot;
+    if (!velocityKmS) {
+      return res.status(404).json({ error: "No se encontró velocidad (deldot) en Horizons" });
+    }
+
+    // 3️⃣ Calcular energía cinética
     const velocityMS = velocityKmS * 1000;
     const energyJ = 0.5 * massKg * Math.pow(velocityMS, 2);
 
-    // 5️⃣ Devolver resultado
     return res.json({
-      id: smallBody.spkid,
-      name: smallBody.name,
+      id,
+      name: horizons.basicInfo?.name || id,
       massKg,
       velocityKmS,
       energyJ
@@ -65,6 +78,8 @@ export const EnergiaCinetica = async (req, res) => {
     return res.status(500).json({ error: "Error interno", details: err.message });
   }
 };
+
+
 
 // desaceleracion atmosferica 2
 export const DesaceleracionAtmosferica = async(req, res) => {

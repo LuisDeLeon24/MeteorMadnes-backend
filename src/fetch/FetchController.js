@@ -1,8 +1,6 @@
 import fetch from "node-fetch"; // si Node <18, si Node 18+ fetch es global
 
-export const Horizons = async ({ id, stopOffsetDays = 30 }) => {
-  if (!id) throw new Error("Se requiere parámetro 'id'");
-
+export async function fetchHorizonsData(id, stopOffsetDays = 30) {
   const today = new Date();
   const start = today.toISOString().split("T")[0];
   const stopDate = new Date();
@@ -14,9 +12,22 @@ export const Horizons = async ({ id, stopOffsetDays = 30 }) => {
   const response = await fetch(targetUrl);
   const json = await response.json();
 
-  return parseAsteroidData(json.result);
-};
+  return parseAsteroidData(json.result); // 👈 mantienes basicInfo, orbitalElements, ephemeris
+}
 
+
+// Handler Express
+export const Horizons = async (req, res) => {
+  try {
+    const { id, stopOffsetDays = 30 } = req.params;
+    if (!id) return res.status(400).json({ error: "Se requiere parámetro 'id'" });
+
+    const data = await fetchHorizonsData(id, stopOffsetDays);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
 
 export const getSmallBodyData = async ({ spkid }) => {
