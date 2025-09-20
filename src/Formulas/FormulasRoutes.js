@@ -12,6 +12,12 @@ import {
   materialEyectado
 } from "./FormulasDemograficoController.js";
 
+import {
+  EnergiaCinetica,
+  DesaceleracionAtmosferica
+} from "./FormulasFisicoController.js";
+
+
 const router = Router();
 
 router.post("/energiaMegatones", energiaMegatones);
@@ -24,5 +30,6 @@ router.post("/victimasIndirectas", victimasIndirectas);
 router.post("/perdidasEconomicas", perdidasEconomicas);
 router.post("/severidadDemografica", severidadDemografica);
 router.post("/materialEyectado", materialEyectado);
-
+router.post("/energiaCinetica", EnergiaCinetica);
+router.post("/desaceleracionAtmosferica", DesaceleracionAtmosferica);
 export default router;

@@ -1,62 +1,34 @@
 import fetch from "node-fetch"; // si Node <18, si Node 18+ fetch es global
 
-export const Horizons = async (req, res) => {
-  try {
-    const { id, stopOffsetDays = 30 } = req.params;
+export const Horizons = async ({ id, stopOffsetDays = 30 }) => {
+  if (!id) throw new Error("Se requiere parámetro 'id'");
 
-    if (!id) {
-      return res.status(400).json({ error: "Se requiere parÃ¡metro 'id'" });
-    }
+  const today = new Date();
+  const start = today.toISOString().split("T")[0];
+  const stopDate = new Date();
+  stopDate.setDate(today.getDate() + Number(stopOffsetDays));
+  const stop = stopDate.toISOString().split("T")[0];
 
-    // Fecha de hoy
-    const today = new Date();
-    const start = today.toISOString().split("T")[0];
+  const targetUrl = `https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND='${id}'&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER='500@0'&START_TIME='${start}'&STOP_TIME='${stop}'&STEP_SIZE='1 d'&QUANTITIES='1,20,23,24'`;
 
-    // Stop = hoy + stopOffsetDays
-    const stopDate = new Date();
-    stopDate.setDate(today.getDate() + Number(stopOffsetDays));
-    const stop = stopDate.toISOString().split("T")[0];
+  const response = await fetch(targetUrl);
+  const json = await response.json();
 
-    const targetUrl = `https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND='${id}'&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER='500@0'&START_TIME='${start}'&STOP_TIME='${stop}'&STEP_SIZE='1 d'&QUANTITIES='1,20,23,24'`;
-
-    const response = await fetch(targetUrl);
-    const json = await response.json();
-
-    const parsedData = parseAsteroidData(json.result);
-
-    res.setHeader("Content-Type", "application/json");
-    res.json(parsedData);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  return parseAsteroidData(json.result);
 };
 
 
 
-export const getSmallBodyData = async (req, res) => {
-  try {
-    const { spkid, name } = req.query;
+export const getSmallBodyData = async ({ spkid }) => {
+  if (!spkid) throw new Error("Se requiere parámetro 'spkid'");
 
-    if (!spkid && !name) {
-      return res.status(400).json({ error: "Se requiere parámetro 'spkid' o 'name'" });
-    }
+  const targetUrl = `https://ssd-api.jpl.nasa.gov/sbdb.api?spk=${spkid}&full-prec=true&phys-par=true&ca-data=true`;
+  const response = await fetch(targetUrl);
+  const json = await response.json();
 
-    let targetUrl = 'https://ssd-api.jpl.nasa.gov/sbdb.api?';
-    targetUrl += spkid ? `spk=${spkid}` : `sstr=${encodeURIComponent(name)}`;
-    targetUrl += '&full-prec=true&phys-par=true&ca-data=true';
+  if (!json?.object?.fullname) throw new Error("Objeto no encontrado");
 
-    const response = await fetch(targetUrl);
-    const json = await response.json();
-
-    if (!json?.object?.fullname) {
-      return res.status(404).json({ error: "Objeto no encontrado" });
-    }
-
-    const parsedData = parseSmallBodyData(json);
-    res.json(parsedData);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  return parseSmallBodyData(json);
 };
 
 export const getNeoData = async (req, res) => {

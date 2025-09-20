@@ -1,40 +1,80 @@
-// energia cinetica 1
-export const EnergiaCinetica = async(req, res) => {
-    try {
-        // Obtener datos desde el body
-        const { masaKg, velocidadMs, densidad, diametro } = req.body;
-        let energiaJoules = null;
+import { getSmallBodyData, Horizons } from '../fetch/FetchController.js';
+import fetch from 'node-fetch'; // si Node <18, si Node 18+ fetch es global
 
-        if (masaKg && velocidadMs) {
-            // Fórmula con masa y velocidad
-            energiaJoules = 0.5 * masaKg * Math.pow(velocidadMs, 2);
-        } else if (densidad && diametro && velocidadMs) {
-            // Fórmula con densidad, diámetro y velocidad
-            energiaJoules = (Math.PI / 12) * densidad * Math.pow(diametro, 3) * Math.pow(velocidadMs, 2);
-        } else {
-            return res.status(400).json({
-                error: "Debes enviar (masaKg y velocidadMs) o (densidad, diametro y velocidadMs)"
-            });
-        }
+// Función auxiliar para buscar asteroide por nombre usando NEO WS
+const fetchNeoData = async () => {
+  const NASA_API_KEY = process.env.NASA_API_KEY || 'JXo5cUUAsYAIcaKdgdMgOqeefNNf77SVR0NznOa4';
+  const targetUrl = `https://api.nasa.gov/neo/rest/v1/neo/browse?api_key=${NASA_API_KEY}`;
+  const response = await fetch(targetUrl);
+  const json = await response.json();
 
-        return res.json({
-            energiaJoules
-        });
+  return json.near_earth_objects.map(obj => ({
+    id: obj.id,
+    name: obj.name,
+    hazardous: obj.is_potentially_hazardous_asteroid,
+    magnitude: obj.absolute_magnitude_h
+  }));
+};
 
-    } catch (err) {
-        res.status(500).json({ error: "Error interno del servidor", details: err.message });
+export const EnergiaCinetica = async (req, res) => {
+  try {
+    let { spkid, name } = req.body;
+
+    if (!spkid && !name) {
+      return res.status(400).json({ error: "Se requiere 'spkid' o 'name' del asteroide" });
     }
+
+    // Si solo se proporciona el nombre, buscar su spkid
+    if (!spkid && name) {
+      const neoData = await fetchNeoData();
+      const asteroid = neoData.find(a => a.name.toLowerCase() === name.toLowerCase());
+      if (!asteroid) return res.status(404).json({ error: "Asteroide no encontrado" });
+      spkid = asteroid.id;
+    }
+
+    // 1️⃣ Traer datos físicos del asteroide
+    const smallBody = await getSmallBodyData({ spkid });
+    if (!smallBody.physicalParams.mass) {
+      return res.status(404).json({ error: "No se encontró la masa del cuerpo" });
+    }
+
+    // 2️⃣ Traer ephemeris usando Horizons
+    const horizons = await Horizons({ id: spkid });
+    if (!horizons || horizons.length === 0) return res.status(404).json({ error: "No se encontró ephemeris" });
+
+    // 3️⃣ Tomar velocidad del primer registro
+    const velocityKmS = horizons[0].velocity; // depende del parseo de Horizons
+    if (!velocityKmS) return res.status(404).json({ error: "Velocidad no disponible" });
+
+    // 4️⃣ Calcular energía cinética (Joules)
+    const massKg = smallBody.physicalParams.mass;
+    const velocityMS = velocityKmS * 1000;
+    const energyJ = 0.5 * massKg * Math.pow(velocityMS, 2);
+
+    // 5️⃣ Devolver resultado
+    return res.json({
+      id: smallBody.spkid,
+      name: smallBody.name,
+      massKg,
+      velocityKmS,
+      energyJ
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Error interno", details: err.message });
+  }
 };
 
 // desaceleracion atmosferica 2
 export const DesaceleracionAtmosferica = async(req, res) => {
     try {
-        const { coeficienteArrastre, densidadAire, velocidad, area, masa } = req.body;
+        const { coeficienteArrastre, densidadAire, velocidad, areaTransversal, masa } = req.body;
 
         // Validar que todos los parámetros estén presentes
         if (!coeficienteArrastre || !densidadAire || !velocidad || !areaTransversal || !masa) {
             return res.status(400).json({
-                error: "Debes enviar coefArrastre, densidadAire, velocidad, area y masa"
+                error: "Debes enviar coeficienteArrastre, densidadAire, velocidad, area y masa"
             });
         }
 
