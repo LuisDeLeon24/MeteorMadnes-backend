@@ -761,53 +761,99 @@ export const getNASASEDAC = async (req, res) => {
 function parseAsteroidData(result) {
   const lines = result.split('\n');
 
-  // ===== Información básica =====
-  const nameMatch = lines.find(line => line.includes('Target body name:'))?.match(/Target body name:\s*(.+?)\s*\{/);
-  const name = nameMatch ? nameMatch[1].trim() : null;
+  const parseNumber = v => {
+    if (!v || v.toLowerCase() === 'n.a.' || v === '-') return null;
+    const num = parseFloat(v);
+    return isNaN(num) ? null : num;
+  }
 
-  const radiusLine = lines.find(line => line.includes('RAD='));
-  const radius = parseFloat(radiusLine?.match(/RAD=\s*([\d.]+)/)?.[1] ?? null);
-  const rotation = parseFloat(radiusLine?.match(/ROTPER=\s*([\d.]+)/)?.[1] ?? null);
+  const data = {
+    basicInfo: {},
+    orbitalElements: {},
+    nonGravitationalForces: {},
+    nonStandardModel: {},
+    ephemeris: []
+  };
 
-  const HLine = lines.find(line => line.includes('H='));
-  const H = parseFloat(HLine?.match(/H=\s*([\d.]+)/)?.[1] ?? null);
-  const spectralType = HLine?.match(/STYP=\s*(\w+)/)?.[1] ?? null;
+  // ===== Recorrer todas las líneas =====
+  lines.forEach(line => {
+    // Información básica
+    if (line.includes('Target body name:')) {
+      const m = line.match(/Target body name:\s*([^\{\n]+)/);
+      if (m) data.basicInfo.name = m[1].trim();
+    }
+    if (line.includes('RAD=')) {
+      const GM = line.match(/GM=\s*([\d.eE+-]+|n.a.)/i)?.[1];
+      const RAD = line.match(/RAD=\s*([\d.eE+-]+)/i)?.[1];
+      const ROTPER = line.match(/ROTPER=\s*([\d.eE+-]+)/i)?.[1];
+      data.basicInfo.GM = parseNumber(GM);
+      data.basicInfo.radius = parseNumber(RAD);
+      data.basicInfo.rotation = parseNumber(ROTPER);
+    }
+    if (line.includes('H=')) {
+      data.basicInfo.H = parseNumber(line.match(/H=\s*([\d.eE+-]+)/)?.[1]);
+      data.basicInfo.G = parseNumber(line.match(/G=\s*([\d.eE+-]+)/)?.[1]);
+      data.basicInfo.BV = line.match(/B-V=\s*([\w.n.a]+)/)?.[1] ?? null;
+    }
+    if (line.includes('ALBEDO=')) {
+      data.basicInfo.albedo = parseNumber(line.match(/ALBEDO=\s*([\d.eE+-]+)/)?.[1]);
+    }
+    if (line.includes('STYP=')) {
+      data.basicInfo.spectralType = line.match(/STYP=\s*(\w+)/)?.[1] ?? null;
+    }
 
-  // ===== Elementos orbitales =====
-  const orbitalLine = lines.find(line => line.includes('EC='));
-  const EC = parseFloat(orbitalLine?.match(/EC=\s*([\d.]+)/)?.[1] ?? null);
-  const A = parseFloat(orbitalLine?.match(/A=\s*([\d.]+)/)?.[1] ?? null);
-  const QR = parseFloat(orbitalLine?.match(/QR=\s*([\d.]+)/)?.[1] ?? null);
-  const ADIST = parseFloat(orbitalLine?.match(/ADIST=\s*([\d.]+)/)?.[1] ?? null);
-  const IN = parseFloat(orbitalLine?.match(/IN=\s*([\d.]+)/)?.[1] ?? null);
-  const OM = parseFloat(orbitalLine?.match(/OM=\s*([\d.]+)/)?.[1] ?? null);
-  const W = parseFloat(orbitalLine?.match(/W=\s*([\d.]+)/)?.[1] ?? null);
+    // Elementos orbitales
+    if (line.includes('EC=')) {
+      ['EC','A','QR','ADIST','IN','OM','W'].forEach(key => {
+        const m = line.match(new RegExp(`${key}=\\s*([\\d.eE+-]+)`));
+        if (m) data.orbitalElements[key] = parseNumber(m[1]);
+      });
+    }
+
+    // Fuerzas no gravitacionales
+    if (line.includes('AMRAT=')) data.nonGravitationalForces.AMRAT = parseNumber(line.match(/AMRAT=\s*([\d.eE+-]+)/)?.[1]);
+    if (line.includes('A1=')) data.nonGravitationalForces.A1 = parseNumber(line.match(/A1=\s*([\d.eE+-]+)/)?.[1]);
+    if (line.includes('A2=')) data.nonGravitationalForces.A2 = parseNumber(line.match(/A2=\s*([\d.eE+-]+)/)?.[1]);
+    if (line.includes('A3=')) data.nonGravitationalForces.A3 = parseNumber(line.match(/A3=\s*([\d.eE+-]+)/)?.[1]);
+    if (line.includes('R0=')) {
+      if (line.includes('Asteroid non-gravitational force model')) {
+        data.nonGravitationalForces.R0_force = parseNumber(line.match(/R0=\s*([\d.eE+-]+)/)?.[1]);
+      } else {
+        data.nonStandardModel.R0_model = parseNumber(line.match(/R0=\s*([\d.eE+-]+)/)?.[1]);
+      }
+    }
+
+    // Modelo no estándar
+    if (line.includes('ALN=')) data.nonStandardModel.ALN = parseNumber(line.match(/ALN=\s*([\d.eE+-]+)/)?.[1]);
+    if (line.includes('NK=')) data.nonStandardModel.NK = parseNumber(line.match(/NK=\s*([\d.]+)/)?.[1]);
+    if (line.includes('NM=')) data.nonStandardModel.NM = parseNumber(line.match(/NM=\s*([\d.]+)/)?.[1]);
+    if (line.includes('NN=')) data.nonStandardModel.NN = parseNumber(line.match(/NN=\s*([\d.eE+-]+)/)?.[1]);
+  });
 
   // ===== Ephemeris =====
   const startIdx = lines.indexOf('$$SOE') + 1;
   const endIdx = lines.indexOf('$$EOE');
-  const ephemeris = startIdx > 0 && endIdx > startIdx
-    ? lines.slice(startIdx, endIdx).map(line => {
-        const parts = line.trim().split(/\s+/);
-        return {
-          date: parts[0],
-          time: parts[1],
-          RA: `${parts[2]} ${parts[3]} ${parts[4]}`,
-          DEC: `${parts[5]} ${parts[6]} ${parts[7]}`,
-          delta: parseFloat(parts[8]),
-          deldot: parseFloat(parts[9]),
-          solarElongation: parseFloat(parts[10]),
-          STO: parseFloat(parts[12])
-        };
-      })
-    : [];
+  if (startIdx > 0 && endIdx > startIdx) {
+    data.ephemeris = lines.slice(startIdx, endIdx).map(line => {
+      const parts = line.trim().split(/\s+/);
+      return {
+        date: parts[0],
+        time: parts[1],
+        RA: `${parts[2]} ${parts[3]} ${parts[4]}`,
+        DEC: `${parts[5]} ${parts[6]} ${parts[7]}`,
+        delta: parseNumber(parts[8]),
+        deldot: parseNumber(parts[9]),
+        solarElongation: parseNumber(parts[10]),
+        STO: parseNumber(parts[12])
+      };
+    });
+  }
 
-  return {
-    basicInfo: { name, radius, rotation, H, spectralType },
-    orbitalElements: { EC, A, QR, ADIST, IN, OM, W },
-    ephemeris
-  };
+  return data;
 }
+
+
+
 
 
 
