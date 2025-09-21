@@ -1,35 +1,40 @@
 import { Router } from "express";
 import {
-  energiaMegatones,
-  radioCrater,
-  radioDestruccion,
-  presionDinamica,
   poblacionAfectada,
   mortalidadDirecta,
   victimasIndirectas,
   perdidasEconomicas,
-  severidadDemografica,
-  materialEyectado
+  severidadDemografica
 } from "./FormulasDemograficoController.js";
 
 import {
   EnergiaCinetica,
-  DesaceleracionAtmosferica
+  DesaceleracionAtmosferica,
+  Luminosidad,
+  PerdidaMasaAblacion,
+  AlturaFragmentacion,
+  FuerzaArrastreOscuro,
+  PresionDinamica,
+  EnergiaSismicaImpacto,
+  EnergiaMegatones
 } from "./FormulasFisicoController.js";
 
 
 const router = Router();
 
-router.post("/energiaMegatones", energiaMegatones);
-router.post("/radioCrater", radioCrater);
-router.post("/radioDestruccion", radioDestruccion);
-router.post("/presionDinamica", presionDinamica);
 router.post("/poblacionAfectada", poblacionAfectada);
 router.post("/mortalidadDirecta", mortalidadDirecta);
 router.post("/victimasIndirectas", victimasIndirectas);
 router.post("/perdidasEconomicas", perdidasEconomicas);
 router.post("/severidadDemografica", severidadDemografica);
-router.post("/materialEyectado", materialEyectado);
 router.post("/energiaCinetica", EnergiaCinetica);
 router.post("/desaceleracionAtmosferica", DesaceleracionAtmosferica);
+router.post("/luminosidad", Luminosidad);
+router.post("/perdidaMasaAblacion", PerdidaMasaAblacion);
+router.post("/alturaFragmentacion", AlturaFragmentacion);
+router.post("/fuerzaArrastreOscuro", FuerzaArrastreOscuro);
+router.post("/presionDinamica", PresionDinamica);
+router.post("/energiaSismicaImpacto", EnergiaSismicaImpacto);
+router.post("/energiaMegatones", EnergiaMegatones);
+
 export default router;
