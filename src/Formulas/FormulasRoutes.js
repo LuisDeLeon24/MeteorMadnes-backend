@@ -16,7 +16,8 @@ import {
   FuerzaArrastreOscuro,
   PresionDinamica,
   EnergiaSismicaImpacto,
-  EnergiaMegatones
+  EnergiaMegatones,
+  DatosCompletosAsteroide
 } from "./FormulasFisicoController.js";
 
 
@@ -36,5 +37,6 @@ router.post("/fuerzaArrastreOscuro", FuerzaArrastreOscuro);
 router.post("/presionDinamica", PresionDinamica);
 router.post("/energiaSismicaImpacto", EnergiaSismicaImpacto);
 router.post("/energiaMegatones", EnergiaMegatones);
+router.post("/datosCompletosAsteroide", DatosCompletosAsteroide);
 
 export default router;

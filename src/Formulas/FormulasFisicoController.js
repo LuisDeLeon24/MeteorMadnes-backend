@@ -607,3 +607,98 @@ export const EnergiaMegatones = async (req, res) => {
     return res.status(500).json({ error: "Error interno", details: err.message });
   }
 };
+
+
+export const DatosCompletosAsteroide = async (req, res) => {
+  try {
+    let { id, name, eficienciaLuminica = 0.1, perdidaMasaFraction = 0.01 } = req.body;
+
+    if (!id && !name) {
+      return res.status(400).json({ error: "Se requiere 'id' o 'name' del asteroide" });
+    }
+
+    if (!id && name) id = name;
+
+    const horizons = await fetchHorizonsData(id);
+    if (!horizons) {
+      return res.status(404).json({ error: "No se encontró efemérides en Horizons" });
+    }
+
+    // 1️⃣ Masa del asteroide
+    let massKg = null;
+    const gm = horizons.basicInfo?.GM;
+    if (gm) {
+      const G = 6.67430e-20; // km^3 / (kg * s^2)
+      massKg = gm / G;
+    } else if (horizons.basicInfo?.radius) {
+      const radiusM = horizons.basicInfo.radius * 1000;
+      const volume = (4 / 3) * Math.PI * Math.pow(radiusM, 3);
+      const density = 3000; // kg/m³ promedio
+      massKg = volume * density;
+    }
+    if (!massKg) return res.status(404).json({ error: "No se pudo calcular la masa del asteroide" });
+
+    // 2️⃣ Velocidad
+    const velocityKmS = horizons.ephemeris[0]?.deldot;
+    if (!velocityKmS) return res.status(404).json({ error: "No se encontró velocidad (deldot) en Horizons" });
+    const velocityMS = Math.abs(velocityKmS * 1000); // m/s
+
+    // 3️⃣ Área transversal
+    const radiusM = horizons.basicInfo.radius * 1000;
+    const areaTransversal = Math.PI * Math.pow(radiusM, 2);
+
+    // 4️⃣ Energía cinética
+    const energiaCinetica = 0.5 * massKg * Math.pow(velocityMS, 2);
+
+    // 5️⃣ Energía en megatones
+    const energiaMt = energiaCinetica / 4.184e15;
+
+    // 6️⃣ Luminosidad
+    const perdidaMasa = massKg * perdidaMasaFraction;
+    const luminosidad = 0.5 * eficienciaLuminica * perdidaMasa * Math.pow(velocityMS, 2);
+
+    // 7️⃣ Pérdida de masa por ablación
+    const ablacionConst = 1.0;
+    const densidadAire = 0.0000185; // promedio a 100 km
+    const densidadMeteoro = 3000;
+    const perdida = (ablacionConst * areaTransversal * densidadAire * Math.pow(velocityMS, 3)) / densidadMeteoro;
+
+    // 8️⃣ Altura de fragmentación
+    const gravedad = 9.81;
+    const coefArrastre = 1.0;
+    const alturaFragmentacion = (0.5 * coefArrastre * 1.225 * areaTransversal * Math.pow(velocityMS, 2)) / (massKg * gravedad);
+
+    // 9️⃣ Fuerza de arrastre
+    const coeficienteArrastre = 1.3;
+    const fuerzaArrastre = 0.5 * coeficienteArrastre * 1.225 * Math.pow(velocityMS, 2) * areaTransversal;
+
+    // 🔟 Presión dinámica
+    const presionDinamica = 0.5 * 1.225 * Math.pow(velocityMS, 2);
+
+    // 1️⃣1️⃣ Energía sísmica
+    const factorSismico = 0.01;
+    const energiaSismica = factorSismico * energiaCinetica;
+
+    return res.json({
+      id,
+      name: horizons.basicInfo?.name || id,
+      massKg,
+      radiusM,
+      velocityKmS,
+      velocityMS,
+      areaTransversal,
+      energiaCinetica,
+      energiaMt,
+      luminosidad,
+      perdida,
+      alturaFragmentacion,
+      fuerzaArrastre,
+      presionDinamica,
+      energiaSismica
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Error interno del servidor", details: err.message });
+  }
+};
