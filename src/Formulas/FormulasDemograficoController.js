@@ -436,19 +436,19 @@ export const resumenImpacto = async (req, res) => {
     const nafHab = densidadHabKm2 * areaAfectadaKm2;
 
     // --------------------------
-    // 2️⃣ Mortalidad directa
+    // 2️⃣ Mortalidad directa - CORREGIDO: Limitar a 1.0
     // --------------------------
     const camasData = await getWorldBankData({ country, indicator: 'SH.MED.BEDS.ZS', date: yearRange });
     const latestCamas = camasData.data.find(d => d.value != null);
     const camasPorMil = latestCamas ? latestCamas.value : 1.5;
 
-    const factorLetalidad = fLetalidadBase * (10 / camasPorMil);
+    const factorLetalidad = Math.min(fLetalidadBase * (10 / camasPorMil), 1.0); // ✅ Limitar a 1.0
     const muertesDirectas = nafHab * factorLetalidad;
 
     // --------------------------
-    // 3️⃣ Víctimas indirectas
+    // 3️⃣ Víctimas indirectas - CORREGIDO: Limitar a 1.0
     // --------------------------
-    const beta = Math.min(betaBase * (10 / camasPorMil), 1);
+    const beta = Math.min(betaBase * (10 / camasPorMil), 1.0); // ✅ Limitar a 1.0
     const muertesIndirectas = nafHab * beta;
 
     // --------------------------
@@ -514,6 +514,7 @@ export const resumenImpacto = async (req, res) => {
     });
 
   } catch (err) {
+    console.error("Error en resumenImpacto:", err);
     res.status(500).json({ error: "Error interno", details: err.message });
   }
 };

@@ -1,36 +1,20 @@
-export const Energia = async (req, res) => {
-  try {
-    // Obtener datos desde el body (POST) o query (GET)
-    const { masaKg, velocidadKms } = req.body; 
+export const EnergiaCinetica = async (id) => {
+  if (!id) throw new Error("Se requiere parámetro 'id'");
 
-    if (!masaKg || !velocidadKms) {
-      return res.status(400).json({
-        error: "Debes enviar masaKg (kg) y velocidadKms (km/s)"
-      });
-    }
+  const smallBody = await getSmallBodyData({ spkid: id });
+  const horizons = await Horizons({ id });
 
-    // Convertir velocidad a m/s
-    const velocidadMs = velocidadKms * 1000;
+  const masa = smallBody.physicalParams.mass || 0;
+  const velocidad = horizons.ephemeris?.[0]?.STO || 0;
 
-    // Energía en Joules
-    const energiaJoules = 0.5 * masaKg * Math.pow(velocidadMs, 2);
-
-    // Energía en megatones de TNT
-    const energiaMegatones = energiaJoules / 4.184e15;
-
-    return res.json({
-      masaKg,
-      velocidadKms,
-      energiaJoules,
-      energiaMegatones
-    });
-
-  } catch (err) {
-    res.status(500).json({ error: "Error interno del servidor", details: err.message });
-  
-  
-  }
+  return {
+    id,
+    masa,
+    velocidad,
+    energiaCinetica: 0.5 * masa * velocidad ** 2
+  };
 };
+
 
 // Constante de gravitación universal
 const G = 6.67430e-11; // N·m²/kg²
