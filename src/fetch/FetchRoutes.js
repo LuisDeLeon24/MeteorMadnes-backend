@@ -9,6 +9,7 @@ import {
   getESARiskList,
   getNASANeoWsData,
   getNaturalEarthData,
+  worldBankHandler,
   getNASASEDAC,
 } from "./FetchController.js";
 
@@ -18,7 +19,7 @@ router.get("/horizons/:id", Horizons);
 router.get("/smallbody", getSmallBodyData);
 router.get("/neo", getNeoData);
 
-router.get("/worldbank", getWorldBankData);
+router.get("/worldbank", worldBankHandler);
 router.get("/location", getLocationData);
 router.get("/disasters", getGDACSDisasters);
 

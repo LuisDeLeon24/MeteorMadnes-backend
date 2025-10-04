@@ -16,6 +16,16 @@ export async function fetchHorizonsData(id, stopOffsetDays = 30) {
 }
 
 
+export const worldBankHandler = async (req, res) => {
+  try {
+    const { country = 'all', indicator = 'SP.POP.TOTL', date = '2020:2023' } = req.query;
+    const data = await getWorldBankData({ country, indicator, date });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Handler Express
 export const Horizons = async (req, res) => {
   try {
