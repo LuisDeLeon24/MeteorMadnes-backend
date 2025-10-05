@@ -1,12 +1,17 @@
 import { Router } from "express";
 import {
+  calcularPoblacionAfectada,
+  calcularMuertesDirectas,
+  calcularMuertesIndirectas,
+  calcularPerdidaPIB,
+  calcularPerdidasEconomicas,
+  calcularSeveridadDemografica,
   poblacionAfectada,
+  perdidaPIB,
   mortalidadDirecta,
   victimasIndirectas,
   perdidasEconomicas,
   severidadDemografica,
-  materialEyectado,
-  perdidaPIB,
   resumenImpacto
 } from "./FormulasDemograficoController.js";
 
@@ -31,7 +36,6 @@ router.post("/mortalidadDirecta", mortalidadDirecta);
 router.post("/victimasIndirectas", victimasIndirectas);
 router.post("/perdidasEconomicas", perdidasEconomicas);
 router.post("/severidadDemografica", severidadDemografica);
-router.post("/materialEyectado", materialEyectado);
 router.post("/perdidaPIB", perdidaPIB);
 router.post("/resumenImpacto", resumenImpacto);
 
