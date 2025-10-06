@@ -8,7 +8,7 @@ import FormulasRoutes from "../src/Formulas/FormulasRoutes.js";
 import FetchRoutes from "../src/fetch/FetchRoutes.js";
 import PneosRoutes from "../src/PNeos/pNeos.routes.js";
 import limiter from "../src/middlewares/validate-cant-request.js";
-import statisticsRoutes from "./estadisticas/statistics.routes.js";
+import statisticsRoutes from "./Estadisticas/statistics.routes.js";
 
 const conectarDB = async () => {
     try {
