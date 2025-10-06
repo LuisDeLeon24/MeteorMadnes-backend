@@ -4,12 +4,11 @@ import helmet from "helmet";
 import morgan from "morgan";
 import { dbConnection } from "./mongo.js";
 
-
-
 import FormulasRoutes from "../src/Formulas/FormulasRoutes.js";
-import FetchRoutes from "../src/fetch/FetchRoutes.js";  
+import FetchRoutes from "../src/fetch/FetchRoutes.js";
 import PneosRoutes from "../src/PNeos/pNeos.routes.js";
 import limiter from "../src/middlewares/validate-cant-request.js";
+import statisticsRoutes from "./estadisticas/statistics.routes.js";
 
 const conectarDB = async () => {
     try {
@@ -33,8 +32,8 @@ const routes = (app) => {
     app.use('/MeteorMadnes/formulas', FormulasRoutes);
     app.use('/MeteorMadnes/fetch', FetchRoutes);
     app.use('/MeteorMadnes/PNeos', PneosRoutes);
+    app.use("/MeteorMadnes/statistics", statisticsRoutes);  // ✅ CORREGIDO
 }
-
 
 export const initServer = async () => {
     const app = express();
@@ -44,7 +43,7 @@ export const initServer = async () => {
         routes(app);
         conectarDB();
         app.listen(port);
-    
+
         console.log(`server running on port ${port}`)
     } catch (error) {
         console.log(`server init failed: ${error}`);
