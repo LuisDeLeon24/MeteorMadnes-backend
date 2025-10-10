@@ -286,6 +286,8 @@ export const resumenImpacto = async (req, res) => {
       date
     } = req.body;
 
+    console.log("Parámetros recibidos:", { country, areaAfectadaKm2});
+
     // Calcular todo usando las funciones reutilizables
     const poblacionData = await calcularPoblacionAfectada({ country, areaAfectadaKm2, date });
     const muertesDirectasData = await calcularMuertesDirectas({ country, areaAfectadaKm2, fLetalidadBase, date });
@@ -293,6 +295,8 @@ export const resumenImpacto = async (req, res) => {
     const perdidaPIBData = await calcularPerdidaPIB({ country, areaAfectadaKm2, gamma, date });
     const perdidasEconomicasData = await calcularPerdidasEconomicas({ country, areaAfectadaKm2, gammaBase, date });
     const severidadData = await calcularSeveridadDemografica({ country, areaAfectadaKm2, fLetalidadBase, betaBase, date });
+
+    console.log("Datos calculados:", {  poblacionData, muertesDirectasData, muertesIndirectasData, perdidaPIBData, perdidasEconomicasData, severidadData });
 
     return res.json({
       country,
